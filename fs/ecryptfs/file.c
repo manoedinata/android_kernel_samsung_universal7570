@@ -258,7 +258,7 @@ out:
 				&ecryptfs_inode_to_private(parent_inode)->crypt_stat;
 
 		if (!(crypt_stat->flags & ECRYPTFS_DEK_IS_SENSITIVE) &&
-				((S_ISDIR(parent_inode->i_mode)) &&
+				((d_is_dir(parent_inode)) &&
 						(parent_crypt_stat->flags & ECRYPTFS_DEK_IS_SENSITIVE))) {
 			rc = ecryptfs_sdp_set_sensitive(parent_crypt_stat->engine_id, dentry);
 		}
@@ -471,7 +471,7 @@ static int ecryptfs_open(struct inode *inode, struct file *file)
 #ifdef CONFIG_SDP
 	if (crypt_stat->flags & ECRYPTFS_DEK_IS_SENSITIVE) {
 #ifdef CONFIG_SDP_KEY_DUMP
-		if (S_ISREG(ecryptfs_dentry->d_inode->i_mode)) {
+		if (d_is_reg(ecryptfs_dentry)) {
 			if(get_sdp_sysfs_key_dump()) {
 				printk("FEK[%s] : ", ecryptfs_dentry->d_name.name);
 				key_dump(crypt_stat->key, 32);
@@ -481,7 +481,7 @@ static int ecryptfs_open(struct inode *inode, struct file *file)
 		/*
 		 * Need to update sensitive mapping on file open
 		 */
-		if (S_ISREG(ecryptfs_dentry->d_inode->i_mode)) {
+		if (d_is_reg(ecryptfs_dentry)) {
 			ecryptfs_set_mapping_sensitive(inode, mount_crypt_stat->userid, TO_SENSITIVE);
 		}
 		
