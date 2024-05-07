@@ -54,7 +54,9 @@
 #include <net/netfilter/nf_nat_helper.h>
 
 /* START_OF_KNOX_NPA */
+#ifdef CONFIG_KNOX_NCM
 #include <net/ncm.h>
+#endif
 /* END_OF_KNOX_NPA */
 
 #define NF_CONNTRACK_VERSION	"0.5.0"
@@ -253,11 +255,13 @@ static void nf_ct_add_to_dying_list(struct nf_conn *ct)
 	struct ct_pcpu *pcpu;
 
 	/* START_OF_KNOX_NPA */
+#ifdef CONFIG_KNOX_NCM
 	del_timer(&ct->npa_timeout);
 	/* send dying conntrack entry to collect data */
 	if ( (check_ncm_flag()) && (ct != NULL) && (atomic_read(&ct->startFlow)) ) {
 		knox_collect_conntrack_data(ct, NCM_FLOW_TYPE_CLOSE, 10);
 	}
+#endif
 	/* END_OF_KNOX_NPA */
 
 	/* add this conntrack to the (per cpu) dying list */
@@ -393,6 +397,7 @@ bool nf_ct_delete(struct nf_conn *ct, u32 portid, int report)
 EXPORT_SYMBOL_GPL(nf_ct_delete);
 
 /* START_OF_KNOX_NPA */
+#ifdef CONFIG_KNOX_NCM
 /* Use this function only if struct nf_conn->timeout is of type struct timer_list */
 static void death_by_timeout_npa(unsigned long ul_conntrack)
 {
@@ -411,14 +416,17 @@ static void death_by_timeout_npa(unsigned long ul_conntrack)
 	del_timer(&tmp->npa_timeout);
 	return;
 }
+#endif
 /* END_OF_KNOX_NPA */
 
 static void death_by_timeout(unsigned long ul_conntrack)
 {
 	/* START_OF_KNOX_NPA */
+#ifdef CONFIG_KNOX_NCM
 	struct nf_conn *tmp = (struct nf_conn *)ul_conntrack;
 	atomic_set(&tmp->intermediateFlow, 0);
 	del_timer(&tmp->npa_timeout);
+#endif
 	/* END_OF_KNOX_NPA */
 	nf_ct_delete((struct nf_conn *)ul_conntrack, 0, 0);
 }
@@ -840,7 +848,9 @@ __nf_conntrack_alloc(struct net *net, u16 zone,
 {
 	struct nf_conn *ct;
 	/* START_OF_KNOX_NPA */
+#ifdef CONFIG_KNOX_NCM
 	struct timespec open_timespec;
+#endif
 	/* END_OF_KNOX_NPA */
 
 	if (unlikely(!nf_conntrack_hash_rnd)) {
@@ -871,6 +881,7 @@ __nf_conntrack_alloc(struct net *net, u16 zone,
 		return ERR_PTR(-ENOMEM);
 	}
 	/* START_OF_KNOX_NPA */
+#ifdef CONFIG_KNOX_NCM
 	/* initialize the conntrack structure members when memory is allocated */
 	if (ct != NULL) {
 		open_timespec = current_kernel_time();
@@ -891,6 +902,7 @@ __nf_conntrack_alloc(struct net *net, u16 zone,
 		setup_timer(&ct->npa_timeout, death_by_timeout_npa, (unsigned long)ct);
 		atomic_set(&ct->intermediateFlow, 0);
 	}
+#endif
 	/* END_OF_KNOX_NPA */
 	
 	/*
